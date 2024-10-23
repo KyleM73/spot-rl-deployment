@@ -8,9 +8,9 @@ conda activate spot
 pip install gitman
 gitman update
 cd external/spot-sdk/prebuilt
-pip install bosdyn_api-4.0.0-py3-none-any.whl
-pip install bosdyn_core-4.0.0-py3-none-any.whl
-pip install bosdyn_client-4.0.0-py3-none-any.whl
+pip install bosdyn_api-4.1.0-py3-none-any.whl
+pip install bosdyn_core-4.1.0-py3-none-any.whl
+pip install bosdyn_client-4.1.0-py3-none-any.whl
 pip install pygame
 pip install pyPS4Controller
 pip install spatialmath-python
