@@ -1,20 +1,10 @@
 # Copyright (c) 2023 Boston Dynamics AI Institute LLC. All rights reserved.
 
 location: external
-sources_locked:
-  - repo: https://github.com/bdaiinstitute/spot-sdk-private
-    name: spot-python-sdk
-    rev: 10f033efe4f4f0233077fade1f175fc51debc4e9
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
 default_group: ''
 groups:
-  -
 sources:
-  -
+  - repo: https://github.com/boston-dynamics/spot-sdk.git
+    name: spot-sdk
+    rev: f43b7ec83de85de63670f9625b8ecfbf5c59c92f
+    type: git
