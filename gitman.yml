@@ -8,3 +8,7 @@ sources:
     name: spot-sdk
     rev: f43b7ec83de85de63670f9625b8ecfbf5c59c92f
     type: git
+  - repo: https://github.com/KyleM73/deployment_models.git
+    name: models
+    rev: main
+    type: git
