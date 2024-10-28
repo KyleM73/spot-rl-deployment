@@ -39,5 +39,6 @@ exit
 
 # Run RL policy on Spot
 ```bash
-python ./python/spot_rl_demo.py <spot_ip> ./models --gamepad-config ./python/gamepad_config.json
+cd python
+python run.py <spot_ip> models/<model_path> --gamepad-config gamepad_config.json
 ```

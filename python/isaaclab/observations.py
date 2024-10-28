@@ -3,8 +3,8 @@
 from operator import sub
 
 from bosdyn.api import robot_state_pb2
-from orbit.orbit_configuration import OrbitConfig
-from orbit.orbit_constants import ordered_joint_names_orbit
+from isaaclab.isaaclab_configuration import IsaaclabConfig
+from isaaclab.isaaclab_constants import ordered_joint_names_isaaclab
 from spatialmath import UnitQuaternion
 from spot.constants import ordered_joint_names_bosdyn
 from utils.dict_tools import dict_to_list, find_ordering, reorder
@@ -71,30 +71,30 @@ def get_projected_gravity(state: robot_state_pb2.RobotStateStreamResponse):
     return gravity_base.tolist()
 
 
-def get_joint_positions(state: robot_state_pb2.RobotStateStreamResponse, config: OrbitConfig):
-    """get joint position from spots state update a reformat for orbit by
-    reordering to match orbits expectation and shifting so 0 position is the
+def get_joint_positions(state: robot_state_pb2.RobotStateStreamResponse, config: IsaaclabConfig):
+    """get joint position from spots state update a reformat for isaaclab by
+    reordering to match isaaclabs expectation and shifting so 0 position is the
     same as was used in training
 
     arguments
     state -- proto msg from spot containing data on the robots state
-    config -- dataclass with values loaded from orbits training data
+    config -- dataclass with values loaded from isaaclabs training data
     """
 
-    spot_to_orbit = find_ordering(ordered_joint_names_bosdyn, ordered_joint_names_orbit)
-    pos = reorder(state.joint_states.position, spot_to_orbit)
-    default_joints = dict_to_list(config.default_joints, ordered_joint_names_orbit)
+    spot_to_isaaclab = find_ordering(ordered_joint_names_bosdyn, ordered_joint_names_isaaclab)
+    pos = reorder(state.joint_states.position, spot_to_isaaclab)
+    default_joints = dict_to_list(config.default_joints, ordered_joint_names_isaaclab)
     pos = list(map(sub, pos, default_joints))
     return pos
 
 
 def get_joint_velocity(state: robot_state_pb2.RobotStateStreamResponse):
-    """get joint velocity from spots state update a reformat for orbit by
-    reordering to match orbits expectation
+    """get joint velocity from spots state update a reformat for isaaclab by
+    reordering to match isaaclabs expectation
 
     arguments
     state -- proto msg from spot containing data on the robots state
     """
-    spot_to_orbit = find_ordering(ordered_joint_names_bosdyn, ordered_joint_names_orbit)
-    vel = reorder(state.joint_states.velocity, spot_to_orbit)
+    spot_to_isaaclab = find_ordering(ordered_joint_names_bosdyn, ordered_joint_names_isaaclab)
+    vel = reorder(state.joint_states.velocity, spot_to_isaaclab)
     return vel

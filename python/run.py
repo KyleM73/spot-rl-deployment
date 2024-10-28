@@ -5,14 +5,14 @@ import sys
 from pathlib import Path
 
 import bosdyn.client.util
-import orbit.orbit_configuration
+import isaaclab.isaaclab_configuration
 from hid.gamepad import (
     Gamepad,
     GamepadConfig,
     joystick_connected,
     load_gamepad_configuration,
 )
-from orbit.onnx_command_generator import (
+from isaaclab.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
     StateHandler,
@@ -31,11 +31,11 @@ def main():
     parser.add_argument("--gamepad-config", type=Path)
     options = parser.parse_args()
 
-    conf_file = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
-    policy_file = orbit.orbit_configuration.detect_policy_file(options.policy_file_path)
+    conf_file = isaaclab.isaaclab_configuration.detect_config_file(options.policy_file_path)
+    policy_file = isaaclab.isaaclab_configuration.detect_policy_file(options.policy_file_path)
 
     context = OnnxControllerContext()
-    config = orbit.orbit_configuration.load_configuration(conf_file)
+    config = isaaclab.isaaclab_configuration.load_configuration(conf_file)
     print(config)
 
     state_handler = StateHandler(context)

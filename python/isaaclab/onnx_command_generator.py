@@ -8,13 +8,13 @@ from typing import List
 
 import numpy as np
 import onnxruntime as ort
-import orbit.observations as ob
+import isaaclab.observations as ob
 from bosdyn.api import robot_command_pb2
 from bosdyn.api.robot_command_pb2 import JointControlStreamRequest
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 from bosdyn.util import seconds_to_timestamp, set_timestamp_from_now, timestamp_to_sec
-from orbit.orbit_configuration import OrbitConfig
-from orbit.orbit_constants import ordered_joint_names_orbit
+from isaaclab.isaaclab_configuration import IsaaclabConfig
+from isaaclab.isaaclab_constants import ordered_joint_names_isaaclab
 from spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, ordered_joint_names_bosdyn
 from utils.dict_tools import dict_to_list, find_ordering, reorder
 
@@ -64,7 +64,7 @@ class OnnxCommandGenerator:
     an onnx model and converts the output to a spot command"""
 
     def __init__(
-        self, context: OnnxControllerContext, config: OrbitConfig, policy_file_name: os.PathLike, verbose: bool
+        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool
     ):
         self._context = context
         self._config = config
@@ -101,11 +101,11 @@ class OnnxCommandGenerator:
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
         test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
 
-        default_joints = dict_to_list(self._config.default_joints, ordered_joint_names_orbit)
+        default_joints = dict_to_list(self._config.default_joints, ordered_joint_names_isaaclab)
         shifted_output = list(map(add, test_scaled, default_joints))
 
-        orbit_to_spot = find_ordering(ordered_joint_names_orbit, ordered_joint_names_bosdyn)
-        reordered_output = reorder(shifted_output, orbit_to_spot)
+        isaaclab_to_spot = find_ordering(ordered_joint_names_isaaclab, ordered_joint_names_bosdyn)
+        reordered_output = reorder(shifted_output, isaaclab_to_spot)
 
         # generate proto message from target joint positions
         proto = self.create_proto(reordered_output)
@@ -117,12 +117,12 @@ class OnnxCommandGenerator:
 
         return proto
 
-    def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig):
+    def collect_inputs(self, state: JointControlStreamRequest, config: IsaaclabConfig):
         """extract observation data from spots current state and format for onnx
 
         arguments
         state -- proto msg with spots latest state
-        config -- model configuration data from orbit
+        config -- model configuration data from isaaclab
 
         return list of float values ready to be passed into the model
         """

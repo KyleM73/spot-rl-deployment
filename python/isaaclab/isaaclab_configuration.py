@@ -6,13 +6,13 @@ import re
 from dataclasses import dataclass
 from typing import List
 
-from orbit.orbit_constants import ordered_joint_names_orbit
+from isaaclab.isaaclab_constants import ordered_joint_names_isaaclab
 from utils.dict_tools import dict_from_lists, set_matching
 
 
 @dataclass
-class OrbitConfig:
-    """dataclass holding data extracted from orbits training configuration"""
+class IsaaclabConfig:
+    """dataclass holding data extracted from isaaclabs training configuration"""
 
     kp: List[float]
     kd: List[float]
@@ -51,18 +51,18 @@ def detect_policy_file(directory: os.PathLike) -> os.PathLike:
     return None
 
 
-def load_configuration(file: os.PathLike) -> OrbitConfig:
-    """parse json file and populate an OrbitConfig dataclass
+def load_configuration(file: os.PathLike) -> IsaaclabConfig:
+    """parse json file and populate an IsaaclabConfig dataclass
 
     arguments
     file -- the path to the json file containing training configuration
 
-    return OrbitConfig containing needed training configuration
+    return IsaaclabConfig containing needed training configuration
     """
 
-    joint_kp = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
-    joint_kd = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
-    joint_offsets = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
+    joint_kp = dict_from_lists(ordered_joint_names_isaaclab, [None] * 12)
+    joint_kd = dict_from_lists(ordered_joint_names_isaaclab, [None] * 12)
+    joint_offsets = dict_from_lists(ordered_joint_names_isaaclab, [None] * 12)
 
     with open(file) as f:
         env_config = json.load(f)
@@ -82,7 +82,7 @@ def load_configuration(file: os.PathLike) -> OrbitConfig:
         action_scale = env_config["actions"]["joint_pos"]["scale"]
         standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
 
-    return OrbitConfig(
+    return IsaaclabConfig(
         kp=joint_kp,
         kd=joint_kd,
         default_joints=joint_offsets,

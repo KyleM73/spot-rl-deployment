@@ -1,14 +1,14 @@
 # Copyright (c) 2023 Boston Dynamics AI Institute LLC. All rights reserved.
 
-location: external
+location:
 default_group: ''
 groups:
 sources:
   - repo: https://github.com/boston-dynamics/spot-sdk.git
-    name: spot-sdk
+    name: external/spot-sdk
     rev: f43b7ec83de85de63670f9625b8ecfbf5c59c92f
     type: git
   - repo: https://github.com/KyleM73/deployment_models.git
-    name: models
+    name: python/models
     rev: main
     type: git
