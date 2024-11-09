@@ -2,7 +2,9 @@
 
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from operator import add, mul
+import pickle
 from threading import Event
 from typing import List
 
@@ -64,7 +66,7 @@ class OnnxCommandGenerator:
     an onnx model and converts the output to a spot command"""
 
     def __init__(
-        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool
+        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool, record: bool = False, history: int = 1
     ):
         self._context = context
         self._config = config
@@ -74,6 +76,20 @@ class OnnxCommandGenerator:
         self._init_pos = None
         self._init_load = None
         self.verbose = verbose
+        self.record = record
+        if self.record:
+            self.recording_dict = {}
+            # TODO use __name__ etc to save to logs path
+            self.file = f"logs/spot_{datetime.now().strftime('%m-%d-%Y_%H%M')}"
+        self.H = history
+        if self.H > 1:
+            self.lin_vel = [0] * 3 * self.H
+            self.ang_vel = [0] * 3 * self.H
+            self.vel_cmd = [0] * 3 * self.H
+            self.proj_g = [0] * 3 * self.H
+            self.q = [0] * 12 * self.H
+            self.dq = [0] * 12 * self.H
+            self.last_a = [0] * 12 * self.H
 
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
@@ -91,8 +107,18 @@ class OnnxCommandGenerator:
         # print("observations", input_list)
 
         # execute model from onnx file
+        if self.H > 1:
+            input_list = self.collect_history(input_list)
         input = [np.array(input_list).astype("float32")]
         output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
+
+        if self.record:
+            self.recording_dict[self._count] = {"obs": input, "action": output}
+            # 500 steps @ ~50hz --> 10s
+            if self._count % 500:
+                with open(f"{self.file}_{self._count // 500}.pkl", "wb") as f:
+                    pickle.dump(self.recording_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+                self.recording_dict = {}
 
         # post process model output apply action scaling and return to spots
         # joint order and offset
@@ -116,6 +142,16 @@ class OnnxCommandGenerator:
         self._context.count += 1
 
         return proto
+
+    def collect_history(self, observation: List[float]) -> List[float]:
+        self.lin_vel = observation[0:3] + self.lin_vel[:-3]
+        self.ang_vel = observation[3:6] + self.ang_vel[:-3]
+        self.proj_g = observation[6:9] + self.proj_g[:-3]
+        self.vel_cmd = observation[9:12] + self.vel_cmd[:-3]
+        self.q = observation[12:24] + self.q[:-12]
+        self.dq = observation[24:36] + self.dq[:-12]
+        self.last_a = observation[36:48] + self.last_a[:-12]
+        return self.lin_vel + self.ang_vel + self.proj_g + self.vel_cmd + self.q + self.dq + self.last_a
 
     def collect_inputs(self, state: JointControlStreamRequest, config: IsaaclabConfig):
         """extract observation data from spots current state and format for onnx

@@ -29,6 +29,8 @@ def main():
     parser.add_argument("policy_file_path", type=Path)
     parser.add_argument("-m", "--mock", action="store_true")
     parser.add_argument("--gamepad-config", type=Path)
+    parser.add_argument("--record", action="store_true", default=False)
+    parser.add_argument("--history", type=int, default=1)
     options = parser.parse_args()
 
     conf_file = isaaclab.isaaclab_configuration.detect_config_file(options.policy_file_path)
@@ -40,7 +42,7 @@ def main():
 
     state_handler = StateHandler(context)
     print(options.verbose)
-    command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose)
+    command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose, options.record, options.history)
 
     # 333 Hz state update / 6 => ~56 Hz control updates
     timeing_policy = EventDivider(context.event, 6)
