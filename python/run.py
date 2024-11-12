@@ -42,7 +42,12 @@ def main():
 
     state_handler = StateHandler(context)
     print(options.verbose)
-    command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose, options.record, options.history)
+    if options.record:
+        record_path = options.policy_file_path
+        print(f"[INFO] saving logs to {record_path}/logs/")
+    else:
+        record_path = None
+    command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose, record_path, options.history)
 
     # 333 Hz state update / 6 => ~56 Hz control updates
     timeing_policy = EventDivider(context.event, 6)

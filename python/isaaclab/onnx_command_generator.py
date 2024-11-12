@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from operator import add, mul
+from pathlib import Path
 import pickle
 from threading import Event
 from typing import List
@@ -66,7 +67,7 @@ class OnnxCommandGenerator:
     an onnx model and converts the output to a spot command"""
 
     def __init__(
-        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool, record: bool = False, history: int = 1
+        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool, record: str = None, history: int = 1
     ):
         self._context = context
         self._config = config
@@ -76,11 +77,14 @@ class OnnxCommandGenerator:
         self._init_pos = None
         self._init_load = None
         self.verbose = verbose
-        self.record = record
-        if self.record:
+        self.record_path = record
+        if self.record_path is not None:
+            self.record = True
             self.recording_dict = {}
-            # TODO use __name__ etc to save to logs path
-            self.file = f"logs/spot_{datetime.now().strftime('%m-%d-%Y_%H%M')}"
+            Path(f"{self.record_path}/logs").mkdir(parents=True, exist_ok=True)
+            self.file = f"{self.record_path}/logs/spot_{datetime.now().strftime('%m-%d-%Y_%H%M')}"
+        else:
+            self.record = False
         self.H = history
         if self.H > 1:
             self.lin_vel = [0] * 3 * self.H
@@ -113,9 +117,9 @@ class OnnxCommandGenerator:
         output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
 
         if self.record:
-            self.recording_dict[self._count] = {"obs": input, "action": output}
+            self.recording_dict[self._count] = {"obs": input[0].tolist(), "action": output}
             # 500 steps @ ~50hz --> 10s
-            if self._count % 500:
+            if (self._count - 1) % 500 == 0:
                 with open(f"{self.file}_{self._count // 500}.pkl", "wb") as f:
                     pickle.dump(self.recording_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
                 self.recording_dict = {}
