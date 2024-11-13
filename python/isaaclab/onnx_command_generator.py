@@ -21,6 +21,37 @@ from isaaclab.isaaclab_constants import ordered_joint_names_isaaclab
 from spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, ordered_joint_names_bosdyn
 from utils.dict_tools import dict_to_list, find_ordering, reorder
 
+
+class TestController:
+    def __init__(self, duration: float, f: float = 50) -> None:
+        self.steps = int(duration * f)
+        self.fwd = [1, 0, 0]
+        self.bkd = [-1, 0, 0]
+        self.left = [0, 1, 0]
+        self.right = [0, -1, 0]
+        self.ccw = [0, 0, 1]
+        self.cw = [0, 0, -1]
+        self.stance = [0, 0, 0]
+        self.gaits = [
+            self.stance,
+            self.fwd, self.bkd,
+            self.left, self.right,
+            self.ccw, self.cw,
+            self.stance,
+        ]
+        self.cmds = []
+        for gait in self.gaits:
+            for i in range(self.steps):
+                self.cmds.append(gait)
+        self.count = 0
+
+    def __call__(self):
+        if self.count < len(self.cmds):
+            self.count += 1
+            return self.cmds[self.count-1]
+        return self.stance
+
+
 @dataclass
 class OnnxControllerContext:
     """data class to hold runtime data needed by the controller"""
@@ -67,7 +98,14 @@ class OnnxCommandGenerator:
     an onnx model and converts the output to a spot command"""
 
     def __init__(
-        self, context: OnnxControllerContext, config: IsaaclabConfig, policy_file_name: os.PathLike, verbose: bool, record: str = None, history: int = 1
+        self,
+        context: OnnxControllerContext,
+        config: IsaaclabConfig,
+        policy_file_name: os.PathLike,
+        verbose: bool,
+        record: str = None,
+        history: int = 1,
+        test: bool = False,
     ):
         self._context = context
         self._config = config
@@ -94,6 +132,9 @@ class OnnxCommandGenerator:
             self.q = [0] * 12 * self.H
             self.dq = [0] * 12 * self.H
             self.last_a = [0] * 12 * self.H
+        self.test = test
+        if self.test:
+            self.test_controller = TestController(5, 50)
 
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
@@ -170,9 +211,13 @@ class OnnxCommandGenerator:
         observations += ob.get_base_linear_velocity(state)
         observations += ob.get_base_angular_velocity(state)
         observations += ob.get_projected_gravity(state)
-        observations += self._context.velocity_cmd
+        if self.test:
+            vel_cmd = self.test_controller()
+        else:
+            vel_cmd = self._context.velocity_cmd
+        observations += vel_cmd
         if self.verbose:
-            print("[INFO] cmd", self._context.velocity_cmd)
+            print("[INFO] cmd", vel_cmd)
         observations += ob.get_joint_positions(state, config)
         observations += ob.get_joint_velocity(state)
         observations += self._last_action
