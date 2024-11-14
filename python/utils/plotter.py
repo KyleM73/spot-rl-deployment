@@ -320,11 +320,20 @@ class Plotter:
             for idx, (dir, val) in enumerate(v.items()):
                 self.ax_est[idx].plot(
                     self.t[idx_start:idx_end],
-                    val[idx_start:idx_end],
+                    self.running_average(val[idx_start:idx_end], 5),
                     c, label=k.upper()
                 )
-                self.ax_est[idx].legend(loc="upper right")
-        self.ax_est[0].set_title("GRF Estimate")
-        self.ax_est[1].set_ylabel("GRFs [N]")
+        self.ax_est[0].legend(loc="upper right")
+        self.ax_est[0].set_title("GRF Estimate [N]")
+        self.ax_est[0].set_ylabel("Fx")
+        self.ax_est[1].set_ylabel("Fy")
+        self.ax_est[2].set_ylabel("Fz")
         self.ax_est[2].set_xlabel("Time [s]")
         self.fig_est.savefig(path + "estimate.png")
+
+    def running_average(self, data, steps = 5):
+        data_padded = [data[0]]*(steps-1) + data
+        data_smooth = []
+        for i in range(len(data)):
+            data_smooth.append(round(sum(data_padded[i:i+steps])/steps))
+        return data_smooth
