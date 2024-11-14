@@ -35,8 +35,8 @@ class TestController:
         self.gaits = [
             self.stance,
             self.fwd, self.bkd,
-            self.left, self.right,
-            self.ccw, self.cw,
+            # self.left, self.right,
+            # self.ccw, self.cw,
             self.stance,
         ]
         self.cmds = []
@@ -168,6 +168,7 @@ class OnnxCommandGenerator:
                 self.recording_dict[self._count]["estimate"] = estimate
             # 500 steps @ ~50hz --> 10s
             if (self._count - 1) % 500 == 0:
+                print(self.recording_dict)
                 with open(f"{self.file}_{self._count // 500}.pkl", "wb") as f:
                     pickle.dump(self.recording_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
                 self.recording_dict = {}
