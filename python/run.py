@@ -28,7 +28,7 @@ def main():
     bosdyn.client.util.add_base_arguments(parser)
     parser.add_argument("policy_file_path", type=Path)
     parser.add_argument("-m", "--mock", action="store_true")
-    parser.add_argument("--gamepad-config", type=Path)
+    parser.add_argument("--gamepad-config", type=Path, default="gamepad_config.json")
     parser.add_argument("--record", action="store_true", default=False)
     parser.add_argument("--history", type=int, default=1)
     parser.add_argument("--test", action="store_true", default=False)
