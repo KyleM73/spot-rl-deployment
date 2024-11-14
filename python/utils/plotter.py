@@ -49,8 +49,8 @@ class Plotter:
         # # Torque
         # self.fig_torque, self.ax_torque = plt.subplots(3, 1, **subplot_kw_args)
         # # Estimate
-        # if self.store_estimate:
-        #     self.fig_est, self.ax_est = plt.subplots(1, 1, **subplot_kw_args)
+        if self.estimate_bool:
+            self.fig_est, self.ax_est = plt.subplots(3, 1, **subplot_kw_args)
         # # Wrench
         # if store_dynamics:
         #     self.fig_wrench, self.ax_wrench = plt.subplots(2, 1, **subplot_kw_args)
@@ -91,10 +91,19 @@ class Plotter:
         self.q_des = deepcopy(self.q)
         self.dq = deepcopy(self.q)
         self.action = deepcopy(self.q)
+        if self.estimate_bool:
+            self.estimates = {
+                "fl": {"x": [], "y": [], "z": []},
+                "fr": {"x": [], "y": [], "z": []},
+                "hl": {"x": [], "y": [], "z": []},
+                "hr": {"x": [], "y": [], "z": []},
+            }
         for k, v in objects.items():
             self.t.append(k * self.dt)
             obs = v["obs"]
             act = v["action"]
+            if self.estimate_bool:
+                est = v["estimate"]
             self.vel["vx"].append(obs[0])
             self.vel["vy"].append(obs[1])
             self.vel["vz"].append(obs[2])
@@ -114,6 +123,12 @@ class Plotter:
                 self.q_des[k].append(q[idx] + self.Ka*act[idx])
                 self.dq[k].append(obs[24*self.H+idx])
                 self.action[k].append(act[idx])
+            if self.estimate_bool:
+                for idx, k in enumerate(["fl", "fr", "hl", "hr"]):
+                    self.estimates[k]["x"].append(est[idx*3])
+                    self.estimates[k]["y"].append(est[idx*3+1])
+                    self.estimates[k]["z"].append(est[idx*3+2])
+
 
     def plot(self, idx: List[int] = None) -> None:
         path = os.path.dirname(os.path.realpath(self.files[0]))
@@ -299,3 +314,17 @@ class Plotter:
         self.ax_action[1].set_ylabel("Angle Offset [rad]")
         self.ax_action[2].set_xlabel("Time [s]")
         self.fig_action.savefig(path + "action.png")
+        # Estimates
+        for k, v in self.estimates.items():
+            c = styles[k.split("_")[0]]
+            for idx, (dir, val) in enumerate(v.items()):
+                self.ax_est[idx].plot(
+                    self.t[idx_start:idx_end],
+                    val[idx_start:idx_end],
+                    c, label=k.upper()
+                )
+                self.ax_est[idx].legend(loc="upper right")
+        self.ax_est[0].set_title("GRF Estimate")
+        self.ax_est[1].set_ylabel("GRFs [N]")
+        self.ax_est[2].set_xlabel("Time [s]")
+        self.fig_est.savefig(path + "estimate.png")
