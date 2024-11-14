@@ -135,7 +135,7 @@ class OnnxCommandGenerator:
             self.last_a = [0] * 12 * self.H
         self.test = test
         if self.test:
-            self.test_controller = TestController(5, 50)
+            self.test_controller = TestController(3, 50)
         self.estimate_bool = estimate
 
     def __call__(self):
