@@ -106,6 +106,7 @@ class OnnxCommandGenerator:
         record: str = None,
         history: int = 1,
         test: bool = False,
+        estimate: bool = False,
     ):
         self._context = context
         self._config = config
@@ -135,6 +136,7 @@ class OnnxCommandGenerator:
         self.test = test
         if self.test:
             self.test_controller = TestController(5, 50)
+        self.estimate_bool = estimate
 
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
@@ -155,10 +157,15 @@ class OnnxCommandGenerator:
         if self.H > 1:
             input_list = self.collect_history(input_list)
         input = [np.array(input_list).astype("float32")]
-        output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
+        outputs = self._inference_session.run(None, {"obs": input})
+        output = outputs[0].tolist()[0]
+        if self.estimate_bool:
+            estimate = outputs[1].tolist()[0]
 
         if self.record:
             self.recording_dict[self._count] = {"obs": input[0].tolist(), "action": output}
+            if self.estimate_bool:
+                self.recording_dict[self._count]["estimate"] = estimate
             # 500 steps @ ~50hz --> 10s
             if (self._count - 1) % 500 == 0:
                 with open(f"{self.file}_{self._count // 500}.pkl", "wb") as f:

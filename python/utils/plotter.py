@@ -20,12 +20,14 @@ class Plotter:
             config: IsaaclabConfig,
             file_regex: str,
             history_len: int = 1,
+            estimate: bool = False
     ) -> None:
         self.config = config
         self.files = glob.glob(file_regex)
         self.H = history_len
         self.dt = 1. / 50.
         self.Ka = config.action_scale
+        self.estimate_bool = estimate
 
         # Plotters
         subplot_kw_args = {

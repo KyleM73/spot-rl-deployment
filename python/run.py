@@ -32,6 +32,7 @@ def main():
     parser.add_argument("--record", action="store_true", default=False)
     parser.add_argument("--history", type=int, default=1)
     parser.add_argument("--test", action="store_true", default=False)
+    parser.add_argument("--estimate", action="store_true", default=False)
     options = parser.parse_args()
 
     conf_file = isaaclab.isaaclab_configuration.detect_config_file(options.policy_file_path)
@@ -51,7 +52,8 @@ def main():
     command_generator = OnnxCommandGenerator(
         context, config, policy_file,
         options.verbose, record_path,
-        options.history, options.test
+        options.history, options.test,
+        options.estimate
     )
 
     # 333 Hz state update / 6 => ~56 Hz control updates
