@@ -86,7 +86,13 @@ def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse
     # Rotate acceleration from odom frame to base frame
     acceleration_base = odom_r_base.inv() * acceleration_odom
 
-    return acceleration_base.tolist()
+    # account for gravity
+    gravity_odom = [0, 0, -9.81]
+    gravity_base = odom_r_base.inv() * gravity_odom
+
+    acceleration_net = acceleration_base + gravity_base
+
+    return acceleration_net.tolist()
 
 
 def get_projected_gravity(state: robot_state_pb2.RobotStateStreamResponse):
