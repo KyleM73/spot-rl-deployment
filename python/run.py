@@ -33,6 +33,7 @@ def main():
     parser.add_argument("--history", type=int, default=1)
     parser.add_argument("--test", action="store_true", default=False)
     parser.add_argument("--estimate", action="store_true", default=False)
+    parser.add_argument("--acceleration", action="store_true", default=False)
     options = parser.parse_args()
 
     conf_file = isaaclab.isaaclab_configuration.detect_config_file(options.policy_file_path)
@@ -53,7 +54,7 @@ def main():
         context, config, policy_file,
         options.verbose, record_path,
         options.history, options.test,
-        options.estimate
+        options.estimate, options.acceleration,
     )
 
     # 333 Hz state update / 6 => ~56 Hz control updates
@@ -76,6 +77,7 @@ def main():
     else:
         spot = Spot(options)
 
+    print("[INFO] press enter to begin:")
     with spot.lease_keep_alive():
         try:
             spot.power_on()

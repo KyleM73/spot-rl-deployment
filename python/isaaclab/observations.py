@@ -52,6 +52,43 @@ def get_base_angular_velocity(state: robot_state_pb2.RobotStateStreamResponse):
     return angular_velocity_base.tolist()
 
 
+def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
+    """calculate linear acceleration of spots base in the base frame from data
+    available in spots state update.  note spot gives acceleration in link frame
+    so we need to rotate it to current estimated pose of the base through the odom frame
+
+    arguments
+    state -- proto msg from spot containing data on the robots state
+    """
+    # Extract acceleration in the link frame
+    if not state.inertial_state.packets:
+        raise ValueError("No acceleration packets found in inertial state")
+    acc_msg = state.inertial_state.packets[0].acceleration_rt_odom_in_link_frame
+    acceleration_link = [acc_msg.x, acc_msg.y, acc_msg.z]
+
+    # Get rotation from mounting link to odom frame
+    odom_r_link_msg = state.inertial_state.packets.odom_rot_link
+    odom_r_link = UnitQuaternion(odom_r_link_msg.w, 
+                                 [odom_r_link_msg.x, 
+                                  odom_r_link_msg.y, 
+                                  odom_r_link_msg.z])
+
+    # Rotate acceleration from link frame to odom frame
+    acceleration_odom = odom_r_link * acceleration_link
+
+    # Get rotation from odom to base frame
+    odom_r_base_msg = state.kinematic_state.odom_tform_body.rotation
+    odom_r_base = UnitQuaternion(odom_r_base_msg.w, 
+                                 [odom_r_base_msg.x, 
+                                  odom_r_base_msg.y, 
+                                  odom_r_base_msg.z])
+
+    # Rotate acceleration from odom frame to base frame
+    acceleration_base = odom_r_base.inv() * acceleration_odom
+
+    return acceleration_base.tolist()
+
+
 def get_projected_gravity(state: robot_state_pb2.RobotStateStreamResponse):
     """calculate direction of gravity in spots base frame
         the assumption here is that the odom frame Z axis is opposite gravity
