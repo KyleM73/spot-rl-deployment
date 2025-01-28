@@ -63,11 +63,11 @@ def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse
     # Extract acceleration in the link frame
     if not state.inertial_state.packets:
         raise ValueError("No acceleration packets found in inertial state")
-    acc_msg = state.inertial_state.packets[0].acceleration_rt_odom_in_link_frame
+    acc_msg = state.inertial_state.packets[-1].acceleration_rt_odom_in_link_frame
     acceleration_link = [acc_msg.x, acc_msg.y, acc_msg.z]
 
     # Get rotation from mounting link to odom frame
-    odom_r_link_msg = state.inertial_state.packets.odom_rot_link
+    odom_r_link_msg = state.inertial_state.packets[-1].odom_rot_link
     odom_r_link = UnitQuaternion(odom_r_link_msg.w, 
                                  [odom_r_link_msg.x, 
                                   odom_r_link_msg.y, 
@@ -85,6 +85,8 @@ def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse
 
     # Rotate acceleration from odom frame to base frame
     acceleration_base = odom_r_base.inv() * acceleration_odom
+    print(f"Acceleration: {acceleration_base}")
+    # acceleration_base *= 0
 
     # account for gravity
     gravity_odom = [0, 0, -9.81]
