@@ -1,6 +1,7 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
 import os
+import copy
 from dataclasses import dataclass
 from datetime import datetime
 from operator import add, mul
@@ -24,20 +25,22 @@ from utils.dict_tools import dict_to_list, find_ordering, reorder
 
 
 class TestController:
-    def __init__(self, duration: float, f: float = 50) -> None:
+    def __init__(self, duration: float, f: float = 50, v: float = 0.3) -> None:
         self.steps = int(duration * f)
-        self.fwd = [1, 0, 0]
-        self.bkd = [-1, 0, 0]
-        self.left = [0, 1, 0]
-        self.right = [0, -1, 0]
-        self.ccw = [0, 0, 1]
-        self.cw = [0, 0, -1]
+        self.fwd = [v, 0, 0]
+        self.bkd = [-v, 0, 0]
+        self.left = [0, v, 0]
+        self.right = [0, -v, 0]
+        self.ccw = [0, 0, v]
+        self.cw = [0, 0, -v]
         self.stance = [0, 0, 0]
         self.gaits = [
             self.stance,
             self.fwd, self.bkd,
-            # self.left, self.right,
-            # self.ccw, self.cw,
+            self.stance,
+            self.left, self.right,
+            self.stance,
+            self.ccw, self.cw,
             self.stance,
         ]
         self.cmds = []
@@ -158,7 +161,7 @@ class OnnxCommandGenerator:
             self.lin_vel = [0] * 3 * self.H
             self.ang_vel = [0] * 3 * self.H
             self.vel_cmd = [0] * 3 * self.H
-            self.proj_g = [0] * 3 * self.H
+            self.proj_g = [0, 0, -1.] * self.H
             self.q = [0] * 12 * self.H
             self.dq = [0] * 12 * self.H
             self.last_a = [0] * 12 * self.H
@@ -189,11 +192,6 @@ class OnnxCommandGenerator:
             self._init_pos = self._context.latest_state.joint_states.position
             self._init_load = self._context.latest_state.joint_states.load
 
-            #init history buffer with first obs
-            input_list = self.collect_inputs(self._context.latest_state, self._config)
-            for _ in range(self.H):
-                self.collect_history(input_list)
-
         # extract observation data from latest spot state data
         input_list = self.collect_inputs(self._context.latest_state, self._config)
         # print("observations", input_list)
@@ -203,7 +201,10 @@ class OnnxCommandGenerator:
             input_list = self.collect_history(input_list)
         input = [np.array(input_list).astype("float32")]
         outputs = self._inference_session.run(None, {"obs": input})
-        output = outputs[0].tolist()[0]
+        output_policy = outputs[0].tolist()[0]
+        # print(f"Action: {output_policy}")
+        # output = [0] * 12
+        output = output_policy
         if self.estimate_bool:
             estimate = outputs[1].tolist()[0]
 
@@ -232,23 +233,23 @@ class OnnxCommandGenerator:
         proto = self.create_proto(reordered_output)
 
         # cache data for history and logging
-        self._last_action = output
+        self._last_action = output_policy
         self._count += 1
         self._context.count += 1
 
         return proto
 
     def collect_history(self, observation: List[float]) -> List[float]:
-        self.lin_vel = observation[0:3] + self.lin_vel[:-3]
-        self.ang_vel = observation[3:6] + self.ang_vel[:-3]
-        self.proj_g = observation[6:9] + self.proj_g[:-3]
-        self.vel_cmd = observation[9:12] + self.vel_cmd[:-3]
-        self.q = observation[12:24] + self.q[:-12]
-        self.dq = observation[24:36] + self.dq[:-12]
-        self.last_a = observation[36:48] + self.last_a[:-12]
-        if self.acc_bool:
-            self.lin_acc = observation[48:51] + self.lin_acc[:-3]
-        return self.lin_vel + self.ang_vel + self.proj_g + self.vel_cmd + self.q + self.dq + self.last_a + self.lin_acc
+        self.lin_vel = self.lin_vel[3:] + observation[0:3]
+        self.ang_vel = self.ang_vel[3:] + observation[3:6]
+        self.proj_g = self.proj_g[3:] + observation[6:9]
+        self.vel_cmd = self.vel_cmd[3:] + observation[9:12]
+        self.q = self.q[12:] + observation[12:24]
+        self.dq = self.dq[12:] + observation[24:36]
+        self.last_a = self.last_a[12:] + observation[36:48]
+        # if self.acc_bool:
+        #     self.lin_acc = self.lin_acc[:-3] + observation[48:51]
+        return self.lin_vel + self.ang_vel + self.proj_g + self.vel_cmd + self.q + self.dq + self.last_a # + self.lin_acc
 
     def collect_inputs(self, state: JointControlStreamRequest, config: IsaaclabConfig):
         """extract observation data from spots current state and format for onnx
@@ -273,8 +274,8 @@ class OnnxCommandGenerator:
         observations += ob.get_joint_positions(state, config)
         observations += ob.get_joint_velocity(state)
         observations += self._last_action
-        if self.acc_bool:
-            observations += ob.get_base_linear_acceleration(state)
+        # if self.acc_bool:
+        #     observations += ob.get_base_linear_acceleration(state)
         return observations
 
     def create_proto(self, pos_command: List[float]):
