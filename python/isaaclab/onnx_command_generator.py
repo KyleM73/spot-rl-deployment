@@ -7,6 +7,7 @@ from operator import add, mul
 from pathlib import Path
 import pickle
 from threading import Event
+import multiprocessing as mp
 from typing import List
 
 import numpy as np
@@ -50,6 +51,28 @@ class TestController:
             self.count += 1
             return self.cmds[self.count-1]
         return self.stance
+
+class LogSaver(mp.Process):
+    """Background process that handles log saving."""
+    def __init__(self, queue, file_prefix):
+        super().__init__(daemon=True)  # Daemon ensures it stops with the main process
+        self.queue = queue
+        self.file_prefix = file_prefix
+
+    def run(self):
+        """Continuously saves logs from the queue."""
+        while True:
+            try:
+                count, data = self.queue.get()  # Get data from the queue (blocks if empty)
+                if data is None:
+                    break  # Stop process if None is received (graceful shutdown)
+
+                file_path = f"{self.file_prefix}_{count // 500}.pkl"
+                with open(file_path, "wb") as f:
+                    pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            except Exception as e:
+                print(f"Error saving logs: {e}")
 
 
 @dataclass
@@ -125,6 +148,9 @@ class OnnxCommandGenerator:
             self.recording_dict = {}
             Path(f"{self.record_path}/logs").mkdir(parents=True, exist_ok=True)
             self.file = f"{self.record_path}/logs/spot_{datetime.now().strftime('%m-%d-%Y_%H%M')}"
+            self.queue = mp.Queue()  # Queue for log data
+            self.log_saver = LogSaver(self.queue, self.file)  # Start log-saving process
+            self.log_saver.start()
         else:
             self.record = False
         self.H = history
@@ -146,6 +172,12 @@ class OnnxCommandGenerator:
         self.estimate_bool = estimate
         self.acc_bool = acceleration
 
+    def save_logs_async(self):
+        """Enqueues logs for the background process."""
+        if self.recording_dict:
+            self.queue.put((self._count, self.recording_dict.copy()))  # Send data to the queue
+            self.recording_dict.clear()  # Clear immediately after copying
+    
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
 
@@ -181,10 +213,7 @@ class OnnxCommandGenerator:
                 self.recording_dict[self._count]["estimate"] = estimate
             # 500 steps @ ~50hz --> 10s
             if (self._count - 1) % 500 == 0:
-                print(self.recording_dict)
-                with open(f"{self.file}_{self._count // 500}.pkl", "wb") as f:
-                    pickle.dump(self.recording_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-                self.recording_dict = {}
+                self.save_logs_async()
 
         # post process model output apply action scaling and return to spots
         # joint order and offset
@@ -335,3 +364,9 @@ class OnnxCommandGenerator:
         # Set user key for latency tracking
         update_proto.joint_command.user_command_key = self._count
         return update_proto
+
+    def close(self):
+        """Shuts down the log-saving process gracefully."""
+        self.save_logs_async()  # Ensure last logs are saved
+        self.queue.put((None, None))  # Signal the log saver to exit
+        self.log_saver.join()  # Wait for process to finish
