@@ -96,6 +96,8 @@ def main():
             spot.stop_command_stream()
             print("stop state stream")
             spot.stop_state_stream()
+            print("stop logging")
+            command_generator.close()
             print("stop game pad")
             if gamepad is not None:
                 gamepad.stop_listening()
