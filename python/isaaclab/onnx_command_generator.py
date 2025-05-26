@@ -156,6 +156,7 @@ class OnnxCommandGenerator:
             self.log_saver.start()
         else:
             self.record = False
+            self.recording_dict = False
         self.H = history
         if self.H > 1:
             self.lin_vel = [0] * 3 * self.H
@@ -368,6 +369,9 @@ class OnnxCommandGenerator:
 
     def close(self):
         """Shuts down the log-saving process gracefully."""
-        self.save_logs_async()  # Ensure last logs are saved
-        self.queue.put((None, None))  # Signal the log saver to exit
-        self.log_saver.join()  # Wait for process to finish
+        try:
+            self.save_logs_async()  # Ensure last logs are saved
+            self.queue.put((None, None))  # Signal the log saver to exit
+            self.log_saver.join()  # Wait for process to finish
+        except:
+            return
