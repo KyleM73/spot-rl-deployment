@@ -51,6 +51,53 @@ def get_base_angular_velocity(state: robot_state_pb2.RobotStateStreamResponse):
 
     return angular_velocity_base.tolist()
 
+class base_accel_class_kyle:
+    def __init__(self):
+        self.last_acc = [0, 0, 0]
+        self.init = False
+    
+    def __call__(self, state: robot_state_pb2.RobotStateStreamResponse):
+        acc = get_base_linear_acceleration(state)
+        if not self.init:
+            self.last_acc = acc
+            self.init = True
+        smooth = [0.5 * self.last_acc[i] + acc[i] for i in range(3)]
+        self.last_acc = acc
+        return smooth
+
+class base_accel_class:
+    def __init__(self, history_length=2):
+        """Initialize with a specified history length for averaging.
+        
+        Args:
+            history_length: Number of time steps to average over. Default is 2 
+                          (equivalent to the original implementation).
+        """
+        self.history_length = max(1, history_length)  # Ensure at least 1 step
+        self.acc_history = []
+        self.init = False
+    
+    def __call__(self, state: robot_state_pb2.RobotStateStreamResponse):
+        acc = get_base_linear_acceleration(state)
+        
+        if not self.init:
+            # Initialize history with copies of the first acceleration reading
+            self.acc_history = [acc.copy() for _ in range(self.history_length)]
+            self.init = True
+        else:
+            # Add the new acceleration to history
+            self.acc_history.append(acc.copy())
+            # Keep only the most recent H entries
+            self.acc_history = self.acc_history[-self.history_length:]
+        
+        # Compute running average over the history
+        avg_acc = [0, 0, 0]
+        for hist_acc in self.acc_history:
+            for i in range(3):
+                avg_acc[i] += hist_acc[i] / self.history_length
+                
+        return avg_acc
+
 
 def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
     """calculate linear acceleration of spots base in the base frame from data

@@ -176,6 +176,8 @@ class OnnxCommandGenerator:
             self.test_controller = TestController(3, 50)
         self.estimate_bool = estimate
         self.acc_bool = acceleration
+        if self.acc_bool:
+            self.acc_ob = ob.base_accel_class()
 
     def save_logs_async(self):
         """Enqueues logs for the background process."""
@@ -279,7 +281,8 @@ class OnnxCommandGenerator:
         observations += ob.get_joint_velocity(state)
         observations += self._last_action
         if self.acc_bool:
-            observations += ob.get_base_linear_acceleration(state)
+            observations += self.acc_ob(state)
+            # observations += ob.get_base_linear_acceleration(state)
         return observations
 
     def create_proto(self, pos_command: List[float]):
