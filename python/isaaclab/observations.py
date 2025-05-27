@@ -53,7 +53,7 @@ def get_base_angular_velocity(state: robot_state_pb2.RobotStateStreamResponse):
 
 
 def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
-     """calculate linear acceleration of spots base in the base frame from data
+    """calculate linear acceleration of spots base in the base frame from data
     available in spots state update.  note spot gives acceleration in link frame
     so we need to rotate it to current estimated pose of the base through the odom frame
 

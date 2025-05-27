@@ -41,10 +41,10 @@ def main():
 
     context = OnnxControllerContext()
     config = isaaclab.isaaclab_configuration.load_configuration(conf_file)
-    print(config)
+    # print(config)
 
     state_handler = StateHandler(context)
-    print(options.verbose)
+    # print(options.verbose)
     if options.record:
         record_path = options.policy_file_path
         print(f"[INFO] saving logs to {record_path}/logs/")

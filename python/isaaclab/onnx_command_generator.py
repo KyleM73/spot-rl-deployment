@@ -71,7 +71,8 @@ class LogSaver(mp.Process):
                     break  # Stop process if None is received (graceful shutdown)
 
                 file_path = f"{self.file_prefix}_{count // 500}.pkl"
-                with open(file_path, "wb") as f:
+                file_mode = "ab" if os.path.exists(file_path) else "wb"
+                with open(file_path, file_mode) as f:
                     pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             except Exception as e:

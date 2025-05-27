@@ -29,9 +29,9 @@ def detect_config_file(directory: os.PathLike) -> os.PathLike:
 
     return filepath to json file
     """
-    print(os.listdir(directory))
+    # print(os.listdir(directory))
     files = [f for f in os.listdir(directory) if f.endswith(".json")]
-    print(files)
+    # print(files)
     if len(files) == 1:
         return os.path.join(directory, files[0])
     return None
