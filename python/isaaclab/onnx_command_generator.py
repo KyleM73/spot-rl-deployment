@@ -248,9 +248,11 @@ class OnnxCommandGenerator:
         self.q = self.q[12:] + observation[12:24]
         self.dq = self.dq[12:] + observation[24:36]
         self.last_a = self.last_a[12:] + observation[36:48]
-        # if self.acc_bool:
-        #     self.lin_acc = self.lin_acc[:-3] + observation[48:51]
-        return self.lin_vel + self.ang_vel + self.proj_g + self.vel_cmd + self.q + self.dq + self.last_a # + self.lin_acc
+        history = self.lin_vel + self.ang_vel + self.proj_g + self.vel_cmd + self.q + self.dq + self.last_a
+        if self.acc_bool:
+            self.lin_acc = self.lin_acc[3:] + observation[48:51]
+            history += self.lin_acc
+        return history
 
     def collect_inputs(self, state: JointControlStreamRequest, config: IsaaclabConfig):
         """extract observation data from spots current state and format for onnx
@@ -275,8 +277,8 @@ class OnnxCommandGenerator:
         observations += ob.get_joint_positions(state, config)
         observations += ob.get_joint_velocity(state)
         observations += self._last_action
-        # if self.acc_bool:
-        #     observations += ob.get_base_linear_acceleration(state)
+        if self.acc_bool:
+            observations += ob.get_base_linear_acceleration(state)
         return observations
 
     def create_proto(self, pos_command: List[float]):

@@ -53,6 +53,49 @@ def get_base_angular_velocity(state: robot_state_pb2.RobotStateStreamResponse):
 
 
 def get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
+     """calculate linear acceleration of spots base in the base frame from data
+    available in spots state update.  note spot gives acceleration in link frame
+    so we need to rotate it to current estimated pose of the base through the odom frame
+
+    arguments
+    state -- proto msg from spot containing data on the robots state
+    """
+    if not state.inertial_state.packets:
+        raise ValueError("No acceleration packets found in inertial state")
+    imu_packet = state.inertial_state.packets[-1]
+    acceleration_link_msg = imu_packet.acceleration_rt_odom_in_link_frame
+    acceleration_link = [
+        acceleration_link_msg.x,
+        acceleration_link_msg.y,
+        acceleration_link_msg.z
+    ]
+
+    odom_r_link_msg = imu_packet.odom_rot_link
+    odom_r_link = UnitQuaternion(
+        odom_r_link_msg.w,
+        [odom_r_link_msg.x, odom_r_link_msg.y, odom_r_link_msg.z]
+    )
+
+    acceleration_odom = odom_r_link * acceleration_link
+    gravity = [0, 0, -9.81]
+    acceleration_odom += gravity
+
+    odom_r_base_msg = state.kinematic_state.odom_tform_body.rotation
+    odom_r_base = UnitQuaternion(
+        odom_r_base_msg.w,
+        [odom_r_base_msg.x, odom_r_base_msg.y, odom_r_base_msg.z]
+    )
+
+    acceleration_base = odom_r_base.inv() * acceleration_odom
+
+    # print(f"Link: {acceleration_link}")
+    # print(f"Odom: {acceleration_odom}")
+    # print(f"{acceleration_base}")
+    # print()
+
+    return acceleration_base.tolist()
+
+def OLD_get_base_linear_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
     """calculate linear acceleration of spots base in the base frame from data
     available in spots state update.  note spot gives acceleration in link frame
     so we need to rotate it to current estimated pose of the base through the odom frame
