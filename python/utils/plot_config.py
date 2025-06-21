@@ -9,7 +9,7 @@ class PlotConfig:
     ylabel: str
     xlabel: str = "Time [s]"
     num_subplots: int = 1
-    subplot_kwargs: Dict[str, bool] | None = None
+    subplot_kwargs: Dict[str, Any] | None = None
     keys: List[str] | None = None
     colors: List[str] | None = None
     linestyles: List[str] | None = None

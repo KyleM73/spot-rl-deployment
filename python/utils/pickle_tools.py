@@ -49,6 +49,7 @@ def get_pickle_data(
 
         # estimates
         log["net_wrench"] = estimate[0:6]
+        log["xy_force"] = estimate[0:2]
         log["ground_reaction_forces"] = estimate[6:10]
         log["force_bool"] = estimate[10]
         log["force_norm"] = estimate[11]

@@ -79,14 +79,53 @@ base_config = {
         linestyles=["solid", "solid", "solid", "solid", "solid", "solid"],
         colors=["tab:blue", "tab:orange", "tab:green", "tab:blue", "tab:orange", "tab:green"],
     ),
-    "ground_reaction_forces": PlotConfig(
+    "xy_force": PlotConfig(
+        title="Net Force",
+        xlabel="Time [s]",
+        ylabel="Estimated Force [N]",
+        num_subplots=1,
+        subplot_kwargs={"sharex": True, "figsize": (10, 8)},
+        keys=[
+            # r"$x$", r"$y$",# r"$z$",
+            r"$\hat x$", r"$\hat y$",# r"$\hat z$",
+        ],
+        linestyles=[
+            "solid", "solid", #"solid",
+            "dashed", "dashed",# "dashed",
+        ],
+        linewidths=[3, 3, 3, 3, 3, 3],
+        colors=[
+            "#0055D4","#F24343",#"#F24343",
+            # "#00C9A7","#FF8C00",#"#FF8C00",
+        ],
+    ),
+    # "ground_reaction_forces": PlotConfig(
+    #     title="Ground Reaction Force",
+    #     xlabel="Time [s]",
+    #     ylabel="Force [N]",
+    #     num_subplots=1,
+    #     subplot_kwargs={"sharex": True},
+    #     linestyles=["solid", "solid", "solid", "solid", "dashed", "dashed", "dashed", "dashed"],
+    #     colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:blue", "tab:orange", "tab:green", "tab:red"],
+    # ),
+    "ground_reaction_forces" : PlotConfig(
         title="Ground Reaction Force",
         xlabel="Time [s]",
-        ylabel="Force [N]",
+        ylabel="Estimated Force [N]",
         num_subplots=1,
-        subplot_kwargs={"sharex": True},
-        linestyles=["solid", "solid", "solid", "solid", "dashed", "dashed", "dashed", "dashed"],
-        colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:blue", "tab:orange", "tab:green", "tab:red"],
+        subplot_kwargs={"sharex": True, "figsize": (10, 8)},
+        linestyles=[
+            "solid", "solid", "solid", "solid",
+            "dashed", "dashed", "dashed", "dashed",
+        ],
+        linewidths=[3, 3, 3, 3, 3, 3],
+        keys=[
+            "FL", "FR", "RL", "RR",
+        ],
+        colors=[
+            "#F24343", "#FF8C00", "#00C9A7", "#0055D4",
+            "#F24343", "#FF8C00", "#00C9A7", "#0055D4",
+        ],
     ),
     "force_bool": PlotConfig(
         title="Force Boolean",

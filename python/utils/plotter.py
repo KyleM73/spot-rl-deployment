@@ -39,7 +39,8 @@ class Plotter:
             estimate: Whether to plot estimates
             debug: Whether to print debug information
         """
-        plt.rcParams['font.family'] = 'Times New Roman'
+        # plt.rcParams['font.family'] = 'Times New Roman'
+        plt.rcParams['font.family'] = 'Sans'
         
         self.config = config
         self.files = glob.glob(file_regex)
@@ -57,7 +58,7 @@ class Plotter:
         self.default_styles = {
             "colors": ["tab:blue", "tab:orange", "tab:green", "tab:red"],
             "linestyles": ["solid"], # ["-", "--", ":", "-."],
-            "linewidths": [2]
+            "linewidths": [3]
         }
         
         # Initialize storage
@@ -143,6 +144,7 @@ class Plotter:
 
     def _plot_single_config(self, plot_name: str, config: PlotConfig, path: str, idx_start: int = 0, idx_end: int = -1) -> None:
         """Plot a single configuration."""
+        t = [i - self.t[idx_start] for i in self.t[idx_start:idx_end]]
         axes = self.axes[plot_name]
         fig = self.figs[plot_name]
         data = self.data_storage[plot_name]
@@ -168,23 +170,30 @@ class Plotter:
                         "lw": linewidth[j % len(linewidth)],
                         }
                     name = labels[j] if labels is not None else f"{j}"
-                    ax.plot(self.t[idx_start:idx_end], d[idx_start:idx_end], c, **style, label=f"{name}")
+                    ax.plot(t, d[idx_start:idx_end], c, **style, label=f"{name}")
             else:
-                ax.plot(self.t[idx_start:idx_end], data[idx_start:idx_end], colors[0], label=plot_name)
+                ax.plot(t, data[idx_start:idx_end], colors[0], label=plot_name)
             
             if labels is not None:
-                ax.legend(loc="upper right")
+                ax.legend(
+                    loc="upper left", ncol=2, fontsize=20, 
+                    borderpad=0.5, handlelength=1.5, handletextpad=0.5,
+                    labelspacing=0.3, columnspacing=0.5
+                )
             if i == 0:
-                ax.set_title(config.title)
-            ax.set_ylabel(config.ylabel)
+                ax.set_title(config.title, fontsize=40)
+            ax.set_ylabel(config.ylabel, fontsize=30)
             if i == len(axes) - 1:
-                ax.set_xlabel(config.xlabel)
+                ax.set_xlabel(config.xlabel, fontsize=30)
+            ax.tick_params(axis="x", labelsize=20)
+            ax.tick_params(axis="y", labelsize=20)
 
         fig.savefig(f"{path}{plot_name}.png")
         plt.close(fig)
 
     def _plot_custom_combinations(self, custom_plots: Dict[str, List[str]], path: str, idx_start: int = 0, idx_end: int = -1) -> None:
         """Plot custom combinations of data."""
+        t = [i - self.t[idx_start] for i in self.t[idx_start:idx_end]]
         for plot_name, data_keys in custom_plots.items():
             fig, ax = plt.subplots()
             
@@ -193,13 +202,19 @@ class Plotter:
                     data = self.data_storage[key]
                     if isinstance(data[0], (list, np.ndarray)):
                         for j, d in enumerate(zip(*data)):
-                            ax.plot(self.t[idx_start:idx_end], d[idx_start:idx_end], label=f"{key}_{j}")
+                            ax.plot(t, d[idx_start:idx_end], label=f"{key}_{j}")
                     else:
-                        ax.plot(self.t[idx_start:idx_end], data[idx_start:idx_end], label=key)
+                        ax.plot(t, data[idx_start:idx_end], label=key)
             
-            ax.legend(loc="upper right")
-            ax.set_title(plot_name)
-            ax.set_xlabel("Time [s]")
+            ax.legend(
+                    loc="upper left", ncol=2, fontsize=20, 
+                    borderpad=0.5, handlelength=1.5, handletextpad=0.5,
+                    labelspacing=0.3, columnspacing=0.5
+                )
+            ax.set_title(plot_name, fontsize=40)
+            ax.set_xlabel("Time [s]", fontsize=30)
+            ax.tick_params(axis="x", labelsize=20)
+            ax.tick_params(axis="y", labelsize=20)
             fig.savefig(f"{path}{plot_name}.png")
             plt.close(fig)
 
